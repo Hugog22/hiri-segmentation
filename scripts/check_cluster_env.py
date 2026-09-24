@@ -73,7 +73,12 @@ def check_libraries():
     # nnU-Net
     try:
         import nnunetv2
-        print(f"✅ nnU-Net v2 Version: {nnunetv2.__version__}")
+        import importlib.metadata
+        try:
+            nnunet_ver = importlib.metadata.version("nnunetv2")
+        except Exception:
+            nnunet_ver = getattr(nnunetv2, "__version__", "installed")
+        print(f"✅ nnU-Net v2 Version: {nnunet_ver}")
     except ImportError:
         print("❌ nnU-Net v2 is NOT installed.")
         all_ok = False
