@@ -29,6 +29,24 @@ python scripts/check_cluster_env.py
 echo "--> [2/5] Running Standardized Preprocessing..."
 python -m src.preprocessing.run_preprocessing --config configs/base.yaml
 
+if [ ! -f "data/processed/manifest.csv" ]; then
+    echo ""
+    echo "========================================================================"
+    echo "⚠️ AVISO: No se encontraron datasets descargados en data/raw/."
+    echo "========================================================================"
+    echo "Para descargar TotalSegmentator v2 automáticamente en data/raw/:"
+    echo "  python scripts/download_datasets.py --download-public"
+    echo ""
+    echo "O si ya tienes datos descargados en otra carpeta del cluster, enlázalos:"
+    echo "  ln -s /ruta/a/tus/datos/TotalSegmentator data/raw/TotalSegmentator"
+    echo "  ln -s /ruta/a/tus/datos/KiTS23 data/raw/KiTS23"
+    echo ""
+    echo "Una vez tengas los datos en data/raw/, vuelve a ejecutar:"
+    echo "  ./scripts/run_cluster_pipeline.sh"
+    echo "========================================================================"
+    exit 0
+fi
+
 # Step 3: Splits and Anti-Leakage Verification
 echo "--> [3/5] Generating 5-Fold Stratified Splits & Verifying Anti-Leakage..."
 python -m src.splits.create_splits \
