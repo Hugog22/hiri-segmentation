@@ -1,0 +1,22 @@
+# Configuración: nnU-Net v2 con Residual Encoder Large (M3 - ResEnc L)
+# Basado en Isensee et al. ("nnU-Net Revisited", MICCAI 2024)
+inherit_from: "configs/base.yaml"
+
+experiment:
+  name: "M3_nnunet_resenc_l"
+  framework: "nnunet"
+  dataset_id: 100
+  configuration: "3d_fullres"
+  planner: "nnUNetPlannerResEncL"
+  trainer: "nnUNetTrainer"
+  num_epochs: 1000
+
+hardware:
+  num_gpus: 1
+  min_gpu_vram_gb: 32
+  batch_size: "auto"
+  patch_size: "auto"
+
+inference:
+  export_probabilities: true
+  save_softmax: true

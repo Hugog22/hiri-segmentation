@@ -1,0 +1,20 @@
+# Configuración: nnU-Net v2 3D Full Resolution (Baseline M1)
+inherit_from: "configs/base.yaml"
+
+experiment:
+  name: "M1_nnunet_3d_fullres"
+  framework: "nnunet"
+  dataset_id: 100
+  configuration: "3d_fullres"
+  planner: "nnUNetPlanner"
+  trainer: "nnUNetTrainer"
+  num_epochs: 1000
+
+hardware:
+  num_gpus: 1
+  batch_size: "auto"
+  patch_size: "auto"
+
+inference:
+  export_probabilities: true
+  save_softmax: true

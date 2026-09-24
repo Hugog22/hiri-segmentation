@@ -1,0 +1,24 @@
+# Configuración: Ensemble Ponderado Multi-Modelo (M8)
+inherit_from: "configs/base.yaml"
+
+experiment:
+  name: "M8_ensemble_top3"
+  framework: "ensemble"
+
+ensemble:
+  method: "weighted_average"
+  models:
+    - name: "M3_nnunet_resenc_l"
+      weight: 0.45
+      source_dir: "results/predictions/M3_nnunet_resenc_l"
+    - name: "M5_swin_unetr_base"
+      weight: 0.35
+      source_dir: "results/predictions/M5_swin_unetr_base"
+    - name: "M1_nnunet_3d_fullres"
+      weight: 0.20
+      source_dir: "results/predictions/M1_nnunet_3d_fullres"
+
+postprocessing:
+  connected_components: true
+  min_volume_threshold: 100
+  kidney_min_suspicious_ml: 10.0

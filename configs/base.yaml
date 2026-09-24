@@ -1,0 +1,125 @@
+data:
+  raw_dir: "data/raw"
+  processed_dir: "data/processed"
+  totalsegmentator_dir: "data/raw/TotalSegmentator"
+  lits_dir: "data/raw/LiTS"
+  kits23_dir: "data/raw/KiTS23"
+  amos22_dir: "data/raw/AMOS22"
+  btcv_dir: "data/raw/BTCV"
+
+preprocessing:
+  target_spacing: [1.0, 1.0, 1.5]
+  hu_window: [-150, 250]
+  orientation: "RAS"
+  normalization: "zscore"
+
+label_maps:
+  unified:
+    0: "Background"
+    1: "Liver"
+    2: "Right kidney"
+    3: "Left kidney"
+    4: "Hepatic tumor"
+    5: "Renal tumor"
+    6: "Renal cyst"
+  source_to_unified:
+    totalsegmentator:
+      5: 1
+      2: 2
+      3: 3
+    lits:
+      1: 1
+      2: 4
+    kits23:
+      1: "resolve_kidney_laterality"
+      2: 5
+      3: 6
+    amos22:
+      6: 1
+      2: 2
+      3: 3
+    btcv:
+      6: 1
+      2: 2
+      3: 3
+
+splits:
+  seed: 42
+  n_folds: 5
+  test_ratio: 0.2
+  stratify_by: ["dataset", "contrast_phase"]
+
+training:
+  patch_size: [128, 128, 128]
+  batch_size: 2
+  epochs:
+    nnunet: 1000
+    monai: 500
+  lr:
+    nnunet: 0.01
+    monai: 0.001
+  optimizer: "AdamW"
+  scheduler: "CosineAnnealingLR"
+  loss: "dice_ce"
+  deep_supervision: true
+  amp: true
+
+augmentation:
+  random_crop: true
+  random_flip:
+    prob: 0.5
+    # Axis 0 (L-R in RAS): REQUIRES label swap (right_kidney 2 ↔ left_kidney 3)
+    # Axis 1 (A-P): safe, no label change
+    # Axis 2 (S-I): safe, no label change — but can be omitted if anatomy is asymmetric in S-I
+    axes: [0, 1]  # Skip axis 2 (S-I) by default — ablation recommended
+    swap_labels_on_lr_flip: {2: 3, 3: 2}
+  random_rotate:
+    prob: 0.2
+    range_rad: [-0.2618, 0.2618]  # ±15 degrees
+  random_scale:
+    prob: 0.2
+    range: [0.85, 1.25]
+  random_elastic_deform:
+    prob: 0.2
+    sigma: [5.0, 7.0]
+    control_points: [3, 3, 3]
+  random_gaussian_noise:
+    prob: 0.15
+    std_range: [0.0, 0.1]
+  random_gaussian_smooth:
+    prob: 0.2
+    sigma_range: [0.5, 1.5]
+  random_brightness_contrast:
+    prob: 0.15
+    brightness_range: [-0.2, 0.2]
+    contrast_range: [0.8, 1.2]
+  random_gamma:
+    prob: 0.15
+    gamma_range: [0.7, 1.5]
+  simulate_low_resolution:
+    prob: 0.25
+    zoom_range: [0.5, 1.0]  # downsample then upsample
+
+inference:
+  sliding_window_overlap: 0.5
+  gaussian_sigma: 0.125
+  tta_flips: [[0], [1], [2], [0, 1], [0, 2], [1, 2], [0, 1, 2]]
+  postprocessing:
+    connected_components: true
+    min_volume_threshold: 100
+
+evaluation:
+  metrics: ["Dice", "HD95", "ASD", "Surface_Dice"]
+  bootstrap_iterations: 10000
+  significance_level: 0.05
+
+wandb:
+  project: "hiri-segmentation"
+  entity: "my-entity"
+
+slurm:
+  default_resources:
+    time: "72:00:00"
+    cpus_per_task: 8
+    mem: "128G"
+    gres: "gpu:4"

@@ -1,0 +1,32 @@
+# Configuración: Swin UNETR Large (~90-100M parámetros) (M6)
+inherit_from: "configs/base.yaml"
+
+experiment:
+  name: "M6_swin_unetr_large"
+  framework: "monai"
+  model_name: "swin_unetr_large"
+  pretrained: false
+
+model_architecture:
+  feature_size: 96
+  in_channels: 1
+  out_channels: 4
+  use_v2: true
+  drop_rate: 0.1
+  attn_drop_rate: 0.1
+
+training:
+  patch_size: [128, 128, 128]
+  batch_size: 2
+  epochs: 500
+  lr: 0.0005
+  weight_decay: 0.00001
+  optimizer: "AdamW"
+  scheduler: "CosineAnnealingLR"
+  val_interval: 5
+  early_stopping_patience: 100
+  amp: true
+
+hardware:
+  num_gpus: 4
+  ddp: true

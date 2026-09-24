@@ -1,0 +1,35 @@
+# Configuración: Swin UNETR Base con Preentrenamiento SSL (M5)
+inherit_from: "configs/base.yaml"
+
+experiment:
+  name: "M5_swin_unetr_base"
+  framework: "monai"
+  model_name: "swin_unetr_base"
+  pretrained: true
+  pretrained_url: "https://github.com/Project-MONAI/MONAI-extra-test-data/releases/download/0.8.1/model_swinvit.pt"
+
+model_architecture:
+  feature_size: 48
+  in_channels: 1
+  out_channels: 4
+  use_v2: true
+  drop_rate: 0.0
+  attn_drop_rate: 0.0
+  dropout_path_rate: 0.0
+
+training:
+  patch_size: [128, 128, 128]
+  batch_size: 2
+  epochs: 500
+  lr: 0.001
+  weight_decay: 0.00001
+  optimizer: "AdamW"
+  scheduler: "CosineAnnealingLR"
+  val_interval: 5
+  early_stopping_patience: 100
+  amp: true
+  deep_supervision: false
+
+hardware:
+  num_gpus: 4
+  ddp: true
