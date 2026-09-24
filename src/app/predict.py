@@ -134,7 +134,7 @@ def run_pipeline(args: argparse.Namespace) -> None:
         
     logger.info("Pipeline completed successfully.")
 
-if __name__ == "__main__":
+def main():
     parser = argparse.ArgumentParser(description="End-to-end medical segmentation pipeline.")
     parser.add_argument("--input", type=Path, required=True, help="Input NIfTI or DICOM path")
     parser.add_argument("--model-path", type=Path, required=True, help="Path to weights")
@@ -146,3 +146,6 @@ if __name__ == "__main__":
     
     args = parser.parse_args()
     run_pipeline(args)
+
+if __name__ == "__main__":
+    main()
