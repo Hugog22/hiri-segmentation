@@ -40,24 +40,41 @@ def setup_directories(base_dir: Path) -> None:
 
 
 def download_totalsegmentator(dest_dir: Path) -> None:
-    """Download TotalSegmentator v2 dataset from Zenodo."""
+    """Download TotalSegmentator v2 dataset from Zenodo with resume support and automatic extraction."""
     dest_dir.mkdir(parents=True, exist_ok=True)
-    zenodo_url = "https://zenodo.org/records/6802614/files/Totalsegmentator_dataset_v201.zip"
-    logger.info("Downloading TotalSegmentator v2 from Zenodo...")
     zip_path = dest_dir / "Totalsegmentator_dataset.zip"
-    if zip_path.exists():
-        logger.info("TotalSegmentator zip archive already exists. Skipping download.")
+    
+    # Check if already extracted
+    case_subdirs = [d for d in dest_dir.iterdir() if d.is_dir() and (d / "ct.nii.gz").exists()]
+    if case_subdirs:
+        logger.info(f"TotalSegmentator is already extracted ({len(case_subdirs)} cases found).")
         return
-        
-    cmd = ["curl", "-L", "-o", str(zip_path), zenodo_url]
+
+    # Check zip file status
+    if zip_path.exists() and zip_path.stat().st_size > 10 * 1024 * 1024:  # > 10 MB
+        size_gb = zip_path.stat().st_size / (1024 ** 3)
+        logger.info(f"TotalSegmentator zip archive exists ({size_gb:.2f} GB). Extracting...")
+    else:
+        if zip_path.exists():
+            logger.warning(f"Existing zip is incomplete or corrupt ({zip_path.stat().st_size} bytes). Resuming/redownloading...")
+        zenodo_url = "https://zenodo.org/records/6802614/files/Totalsegmentator_dataset_v201.zip"
+        logger.info("Downloading TotalSegmentator v2 from Zenodo (resumable curl)...")
+        # -L follows redirects, -C - resumes partial downloads
+        cmd = ["curl", "-L", "-C", "-", "-o", str(zip_path), zenodo_url]
+        try:
+            subprocess.run(cmd, check=True)
+            logger.info(f"Downloaded TotalSegmentator archive to {zip_path}")
+        except Exception as e:
+            logger.error(f"Download failed: {e}")
+            return
+            
+    logger.info(f"Extracting {zip_path.name} into {dest_dir} (this may take a few minutes)...")
     try:
-        subprocess.run(cmd, check=True)
-        logger.info(f"Downloaded TotalSegmentator archive to {zip_path}")
-        logger.info("Extracting...")
-        subprocess.run(["unzip", "-q", str(zip_path), "-d", str(dest_dir)], check=True)
-        logger.info("Extraction complete.")
+        subprocess.run(["unzip", "-q", "-o", str(zip_path), "-d", str(dest_dir)], check=True)
+        extracted = [d for d in dest_dir.iterdir() if d.is_dir() and (d / "ct.nii.gz").exists()]
+        logger.info(f"Extraction complete! Found {len(extracted)} valid case directories.")
     except Exception as e:
-        logger.error(f"Download or unzip failed: {e}")
+        logger.error(f"Unzip failed: {e}. If the zip is partially downloaded, re-run with --download-public.")
 
 
 def download_kits23(dest_dir: Path) -> None:
