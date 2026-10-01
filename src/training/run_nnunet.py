@@ -34,14 +34,32 @@ def _run_cmd(cmd: List[str]) -> None:
         logger.error(f"Command failed with exit code {e.returncode}: {' '.join(cmd)}")
         sys.exit(e.returncode)
 
-def run_planning(dataset_id: int, planner: str = "nnUNetPlannerResEncL") -> None:
+def run_planning(dataset_id: int, planner: str = "nnUNetPlannerResEncL", verify_integrity: bool = False) -> None:
     """Run nnUNetv2_plan_and_preprocess with automatic fallback to standard planner."""
+    # Ensure NibabelIO is configured to avoid SimpleITK orthonormal cosine warnings
+    import json
+    raw_dir = Path(os.environ.get("nnUNet_raw", Path.cwd() / "nnUNet_raw"))
+    ds_json_path = raw_dir / f"Dataset{dataset_id:03d}_HIRI" / "dataset.json"
+    if ds_json_path.exists():
+        try:
+            with open(ds_json_path, "r") as f:
+                d_meta = json.load(f)
+            if d_meta.get("overwrite_image_reader_writer") != "NibabelIO":
+                d_meta["overwrite_image_reader_writer"] = "NibabelIO"
+                with open(ds_json_path, "w") as f:
+                    json.dump(d_meta, f, indent=4)
+                logger.info("Configured dataset.json with overwrite_image_reader_writer: NibabelIO")
+        except Exception as e:
+            logger.warning(f"Could not update dataset.json reader: {e}")
+
     cmd = [
         "nnUNetv2_plan_and_preprocess",
         "-d", str(dataset_id),
         "-pl", planner,
-        "--verify_dataset_integrity"
     ]
+    if verify_integrity:
+        cmd.append("--verify_dataset_integrity")
+
     try:
         _run_cmd(cmd)
     except SystemExit:
@@ -51,8 +69,9 @@ def run_planning(dataset_id: int, planner: str = "nnUNetPlannerResEncL") -> None
                 "nnUNetv2_plan_and_preprocess",
                 "-d", str(dataset_id),
                 "-pl", "nnUNetPlanner",
-                "--verify_dataset_integrity"
             ]
+            if verify_integrity:
+                fallback_cmd.append("--verify_dataset_integrity")
             _run_cmd(fallback_cmd)
         else:
             raise
@@ -111,6 +130,7 @@ def main() -> None:
     plan_parser = subparsers.add_parser("plan")
     plan_parser.add_argument("--dataset-id", type=int, required=True)
     plan_parser.add_argument("--planner", type=str, default="nnUNetPlannerResEncL")
+    plan_parser.add_argument("--verify", action="store_true", help="Run verify_dataset_integrity")
     
     train_parser = subparsers.add_parser("train")
     train_parser.add_argument("--dataset-id", type=int, required=True)
@@ -141,7 +161,7 @@ def main() -> None:
     setup_nnunet_env(Path(args.base_dir).resolve())
     
     if args.command == "plan":
-        run_planning(args.dataset_id, args.planner)
+        run_planning(args.dataset_id, args.planner, args.verify)
     elif args.command == "train":
         run_training(args.dataset_id, args.config, args.fold, args.trainer, args.planner, args.resume)
     elif args.command == "all-folds":

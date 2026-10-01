@@ -200,7 +200,8 @@ def main():
         "channel_names": {"0": "CT"},
         "labels": labels,
         "numTraining": num_training,
-        "file_ending": ".nii.gz"
+        "file_ending": ".nii.gz",
+        "overwrite_image_reader_writer": "NibabelIO"
     }
 
     with open(base_dir / 'dataset.json', 'w') as f:
