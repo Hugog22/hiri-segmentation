@@ -95,18 +95,31 @@ def main():
     args = parser.parse_args()
     
     results = []
-    for case_dir in args.input_dir.iterdir():
-        if case_dir.is_dir():
-            res = check_case(case_dir)
-            results.append(res)
+    if args.input_dir.exists():
+        for case_dir in args.input_dir.iterdir():
+            if case_dir.is_dir() and case_dir.name != 'resampled':
+                # Only check directories that contain image or mask files
+                if not (case_dir / 'image.nii.gz').exists() and not (case_dir / 'label.nii.gz').exists() and not (case_dir / 'unified_label.nii.gz').exists():
+                    continue
+                res = check_case(case_dir)
+                results.append(res)
             
+    if not results:
+        logging.warning(f"No valid cases found to verify in {args.input_dir}. Writing empty report.")
+        args.output_report.parent.mkdir(parents=True, exist_ok=True)
+        df = pd.DataFrame(columns=['case_id', 'pass', 'error'])
+        df.to_csv(args.output_report, index=False)
+        return
+
     df = pd.DataFrame(results)
+    args.output_report.parent.mkdir(parents=True, exist_ok=True)
     df.to_csv(args.output_report, index=False)
     logging.info(f"Report saved to {args.output_report}")
     
-    failed = df[df['pass'] == False]
-    if len(failed) > 0:
-        logging.warning(f"Found {len(failed)} failed cases.")
+    if 'pass' in df.columns:
+        failed = df[df['pass'] == False]
+        if len(failed) > 0:
+            logging.warning(f"Found {len(failed)} failed cases.")
 
 if __name__ == "__main__":
     main()

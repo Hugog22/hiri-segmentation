@@ -101,21 +101,38 @@ def main():
     args.output_dir.mkdir(parents=True, exist_ok=True)
     
     for case_dir in args.input_dir.iterdir():
-        if not case_dir.is_dir():
+        if not case_dir.is_dir() or case_dir.name == 'resampled':
             continue
             
+        img_path = case_dir / 'image.nii.gz'
+        mask_path = case_dir / 'unified_label.nii.gz'
+        if not mask_path.exists():
+            mask_path = case_dir / 'label.nii.gz'
+            
+        if not img_path.exists() and not mask_path.exists():
+            continue
+
         case_out_dir = args.output_dir / case_dir.name
         case_out_dir.mkdir(parents=True, exist_ok=True)
         
-        img_path = case_dir / 'image.nii.gz'
-        mask_path = case_dir / 'unified_label.nii.gz'
+        img_out = case_out_dir / 'image.nii.gz'
+        mask_out = case_out_dir / 'unified_label.nii.gz'
         
-        if img_path.exists():
-            save_original_metadata(img_path, case_out_dir / 'original_metadata.json')
-            resample_image(img_path, case_out_dir / 'image.nii.gz', args.target_spacing)
+        already_done = True
+        if img_path.exists() and not img_out.exists():
+            already_done = False
+        if mask_path.exists() and not mask_out.exists():
+            already_done = False
             
-        if mask_path.exists():
-            resample_mask(mask_path, case_out_dir / 'unified_label.nii.gz', args.target_spacing)
+        if already_done:
+            continue
+
+        if img_path.exists() and not img_out.exists():
+            save_original_metadata(img_path, case_out_dir / 'original_metadata.json')
+            resample_image(img_path, img_out, args.target_spacing)
+            
+        if mask_path.exists() and not mask_out.exists():
+            resample_mask(mask_path, mask_out, args.target_spacing)
             
         logging.info(f"Resampled {case_dir.name}")
 

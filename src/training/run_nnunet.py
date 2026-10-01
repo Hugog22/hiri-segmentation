@@ -14,12 +14,16 @@ logging.basicConfig(level=logging.INFO, format="%(asctime)s - %(name)s - %(level
 logger = logging.getLogger(__name__)
 
 def setup_nnunet_env(base_dir: Path) -> None:
-    """Set nnUNet_raw, nnUNet_preprocessed, nnUNet_results environment variables."""
-    nnunet_dir = base_dir / "data" / "nnunet"
-    os.environ["nnUNet_raw"] = str(nnunet_dir / "nnUNet_raw")
-    os.environ["nnUNet_preprocessed"] = str(nnunet_dir / "nnUNet_preprocessed")
-    os.environ["nnUNet_results"] = str(nnunet_dir / "nnUNet_results")
-    logger.info("Set nnU-Net environment variables.")
+    """Set nnUNet_raw, nnUNet_preprocessed, nnUNet_results environment variables if not already set."""
+    if "nnUNet_raw" not in os.environ:
+        os.environ["nnUNet_raw"] = str(base_dir / "nnUNet_raw")
+    if "nnUNet_preprocessed" not in os.environ:
+        os.environ["nnUNet_preprocessed"] = str(base_dir / "nnUNet_preprocessed")
+    if "nnUNet_results" not in os.environ:
+        os.environ["nnUNet_results"] = str(base_dir / "nnUNet_results")
+    for var in ["nnUNet_raw", "nnUNet_preprocessed", "nnUNet_results"]:
+        Path(os.environ[var]).mkdir(parents=True, exist_ok=True)
+    logger.info(f"nnU-Net environment configured: raw={os.environ['nnUNet_raw']}")
 
 def _run_cmd(cmd: List[str]) -> None:
     """Run a shell command with logging."""

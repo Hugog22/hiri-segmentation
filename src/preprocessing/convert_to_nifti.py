@@ -66,6 +66,15 @@ def process_dataset(dataset_name: str, raw_dir: Path, output_dir: Path) -> list:
             case_out.mkdir(parents=True, exist_ok=True)
             img_src = case_dir / 'ct.nii.gz'
             img_dst = case_out / 'image.nii.gz'
+            label_dst = case_out / 'label.nii.gz'
+            if img_dst.exists() and label_dst.exists():
+                manifest.append({
+                    'case_id': case_id, 'dataset': dataset_name,
+                    'original_path': str(img_src),
+                    'processed_path': str(img_dst),
+                    'contrast_phase': 'unknown'
+                })
+                continue
             if not img_src.exists():
                 logging.warning(f"No ct.nii.gz in {case_dir}, skipping")
                 continue
@@ -84,7 +93,7 @@ def process_dataset(dataset_name: str, raw_dir: Path, output_dir: Path) -> list:
                     else:
                         logging.warning(f"Missing {organ_file}.nii.gz for {case_id}")
                 result_nii = nib.Nifti1Image(combined_arr, ref_nii.affine, ref_nii.header)
-                nib.save(result_nii, str(case_out / 'label.nii.gz'))
+                nib.save(result_nii, str(label_dst))
             else:
                 logging.warning(f"No segmentations/ directory for {case_id}")
             manifest.append({
@@ -99,10 +108,14 @@ def process_dataset(dataset_name: str, raw_dir: Path, output_dir: Path) -> list:
             case_out = dataset_out_dir / f"case_{case_id}"
             case_out.mkdir(parents=True, exist_ok=True)
             img_dst = case_out / 'image.nii.gz'
+            label_dst = case_out / 'label.nii.gz'
+            if img_dst.exists() and label_dst.exists():
+                manifest.append({'case_id': f"case_{case_id}", 'dataset': dataset_name, 'original_path': str(img_file), 'processed_path': str(img_dst), 'contrast_phase': 'unknown'})
+                continue
             shutil.copy2(img_file, img_dst)
             label_src = raw_dir / f"segmentation-{case_id}.nii"
             if label_src.exists():
-                shutil.copy2(label_src, case_out / 'label.nii.gz')
+                shutil.copy2(label_src, label_dst)
             manifest.append({'case_id': f"case_{case_id}", 'dataset': dataset_name, 'original_path': str(img_file), 'processed_path': str(img_dst), 'contrast_phase': 'unknown'})
     elif dataset_name.lower() == 'kits23':
         for case_dir in raw_dir.glob('case_*'):
@@ -111,11 +124,15 @@ def process_dataset(dataset_name: str, raw_dir: Path, output_dir: Path) -> list:
             case_out.mkdir(parents=True, exist_ok=True)
             img_src = case_dir / 'imaging.nii.gz'
             label_src = case_dir / 'segmentation.nii.gz'
+            img_dst = case_out / 'image.nii.gz'
+            label_dst = case_out / 'label.nii.gz'
+            if img_dst.exists() and label_dst.exists():
+                manifest.append({'case_id': case_id, 'dataset': dataset_name, 'original_path': str(img_src), 'processed_path': str(img_dst), 'contrast_phase': 'unknown'})
+                continue
             if img_src.exists():
-                img_dst = case_out / 'image.nii.gz'
                 shutil.copy2(img_src, img_dst)
                 if label_src.exists():
-                    shutil.copy2(label_src, case_out / 'label.nii.gz')
+                    shutil.copy2(label_src, label_dst)
                 manifest.append({'case_id': case_id, 'dataset': dataset_name, 'original_path': str(img_src), 'processed_path': str(img_dst), 'contrast_phase': 'unknown'})
     elif dataset_name.lower() == 'amos':
         img_dir = raw_dir / 'imagesTr'
@@ -126,10 +143,14 @@ def process_dataset(dataset_name: str, raw_dir: Path, output_dir: Path) -> list:
                 case_out = dataset_out_dir / case_id
                 case_out.mkdir(parents=True, exist_ok=True)
                 img_dst = case_out / 'image.nii.gz'
+                label_dst = case_out / 'label.nii.gz'
+                if img_dst.exists() and label_dst.exists():
+                    manifest.append({'case_id': case_id, 'dataset': dataset_name, 'original_path': str(img_file), 'processed_path': str(img_dst), 'contrast_phase': 'unknown'})
+                    continue
                 shutil.copy2(img_file, img_dst)
                 label_src = label_dir / f"{case_id}.nii.gz"
                 if label_src.exists():
-                    shutil.copy2(label_src, case_out / 'label.nii.gz')
+                    shutil.copy2(label_src, label_dst)
                 manifest.append({'case_id': case_id, 'dataset': dataset_name, 'original_path': str(img_file), 'processed_path': str(img_dst), 'contrast_phase': 'unknown'})
     elif dataset_name.lower() == 'btcv':
         img_dir = raw_dir / 'img'
@@ -140,11 +161,15 @@ def process_dataset(dataset_name: str, raw_dir: Path, output_dir: Path) -> list:
                 case_out = dataset_out_dir / case_id
                 case_out.mkdir(parents=True, exist_ok=True)
                 img_dst = case_out / 'image.nii.gz'
+                label_dst = case_out / 'label.nii.gz'
+                if img_dst.exists() and label_dst.exists():
+                    manifest.append({'case_id': case_id, 'dataset': dataset_name, 'original_path': str(img_file), 'processed_path': str(img_dst), 'contrast_phase': 'unknown'})
+                    continue
                 shutil.copy2(img_file, img_dst)
                 label_num = case_id.replace('img', '')
                 label_src = label_dir / f"label{label_num}.nii.gz"
                 if label_src.exists():
-                    shutil.copy2(label_src, case_out / 'label.nii.gz')
+                    shutil.copy2(label_src, label_dst)
                 manifest.append({'case_id': case_id, 'dataset': dataset_name, 'original_path': str(img_file), 'processed_path': str(img_dst), 'contrast_phase': 'unknown'})
     
     return manifest

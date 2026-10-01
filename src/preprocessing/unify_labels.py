@@ -13,9 +13,14 @@ logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(
 
 def unify_labels_for_dataset(dataset_name: str, input_dir: Path, output_dir: Path, merge_tumors: bool) -> None:
     for case_dir in input_dir.iterdir():
-        if not case_dir.is_dir():
+        if not case_dir.is_dir() or case_dir.name == 'resampled':
             continue
         
+        case_out_dir = output_dir / case_dir.name
+        out_path = case_out_dir / 'unified_label.nii.gz'
+        if out_path.exists():
+            continue
+
         label_path = case_dir / 'label.nii.gz'
         if not label_path.exists():
             continue
