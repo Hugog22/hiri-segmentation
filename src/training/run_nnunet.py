@@ -35,14 +35,27 @@ def _run_cmd(cmd: List[str]) -> None:
         sys.exit(e.returncode)
 
 def run_planning(dataset_id: int, planner: str = "nnUNetPlannerResEncL") -> None:
-    """Run nnUNetv2_plan_and_preprocess."""
+    """Run nnUNetv2_plan_and_preprocess with automatic fallback to standard planner."""
     cmd = [
         "nnUNetv2_plan_and_preprocess",
         "-d", str(dataset_id),
         "-pl", planner,
         "--verify_dataset_integrity"
     ]
-    _run_cmd(cmd)
+    try:
+        _run_cmd(cmd)
+    except SystemExit:
+        if planner != "nnUNetPlanner":
+            logger.warning(f"Planner '{planner}' failed or unavailable. Falling back to default 'nnUNetPlanner'...")
+            fallback_cmd = [
+                "nnUNetv2_plan_and_preprocess",
+                "-d", str(dataset_id),
+                "-pl", "nnUNetPlanner",
+                "--verify_dataset_integrity"
+            ]
+            _run_cmd(fallback_cmd)
+        else:
+            raise
 
 def run_training(dataset_id: int, config: str, fold: int, trainer: str = "nnUNetTrainer", 
                  planner: str = "nnUNetPlannerResEncL", resume: bool = False) -> None:

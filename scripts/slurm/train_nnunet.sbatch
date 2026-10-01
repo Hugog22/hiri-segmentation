@@ -10,7 +10,17 @@
 #SBATCH --gres=gpu:4
 #SBATCH --partition=gpu
 
-module load cuda/12.1
+mkdir -p logs
+
+if command -v module &> /dev/null; then
+    module load cuda/12.1 2>/dev/null || module load cuda 2>/dev/null || true
+fi
+
+if [ -f "venv/bin/activate" ]; then
+    source venv/bin/activate
+elif [ -f "$HOME/hiri-segmentation/venv/bin/activate" ]; then
+    source "$HOME/hiri-segmentation/venv/bin/activate"
+fi
 
 export nnUNet_raw="${nnUNet_raw:-${PWD}/nnUNet_raw}"
 export nnUNet_preprocessed="${nnUNet_preprocessed:-${PWD}/nnUNet_preprocessed}"
@@ -36,5 +46,5 @@ done
 
 echo "Starting nnU-Net v2 training for dataset $DATASET_ID, config $CONFIG, fold $FOLD, planner $PLANNER"
 
-# Run nnUNetv2_train with 4 GPUs (or 1 depending on cluster partition)
-nnUNetv2_train $DATASET_ID $CONFIG $FOLD -p $PLANNER -num_gpus 4 $RESUME
+# Run nnUNetv2_train for the specified fold
+nnUNetv2_train $DATASET_ID $CONFIG $FOLD -p $PLANNER $RESUME

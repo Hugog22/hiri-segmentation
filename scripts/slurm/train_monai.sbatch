@@ -10,12 +10,17 @@
 #SBATCH --gres=gpu:4
 #SBATCH --partition=gpu
 
-module load cuda/12.1
+mkdir -p logs checkpoints
 
-# Activate environment (adjust path if needed)
-# source /path/to/conda/etc/profile.d/conda.sh
-# conda activate hiri-env
-# OR if using apptainer, prepend apptainer exec to the command
+if command -v module &> /dev/null; then
+    module load cuda/12.1 2>/dev/null || module load cuda 2>/dev/null || true
+fi
+
+if [ -f "venv/bin/activate" ]; then
+    source venv/bin/activate
+elif [ -f "$HOME/hiri-segmentation/venv/bin/activate" ]; then
+    source "$HOME/hiri-segmentation/venv/bin/activate"
+fi
 
 export MASTER_ADDR=$(hostname -s)
 export MASTER_PORT=$(shuf -i 10000-65500 -n 1)
@@ -36,11 +41,16 @@ while [[ "$#" -gt 0 ]]; do
     shift
 done
 
-echo "Starting MONAI training: Model=$MODEL | Fold=$FOLD | Config=$CONFIG"
+NUM_GPUS=$(python3 -c "import torch; print(torch.cuda.device_count())" 2>/dev/null || echo 1)
+if [ -z "$NUM_GPUS" ] || [ "$NUM_GPUS" -lt 1 ]; then
+    NUM_GPUS=1
+fi
+
+echo "Starting MONAI training: Model=$MODEL | Fold=$FOLD | Config=$CONFIG | GPUs=$NUM_GPUS"
 
 srun torchrun \
     --nnodes=1 \
-    --nproc_per_node=4 \
+    --nproc_per_node=$NUM_GPUS \
     --rdzv_id=$SLURM_JOB_ID \
     --rdzv_backend=c10d \
     --rdzv_endpoint=$MASTER_ADDR:$MASTER_PORT \

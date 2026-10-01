@@ -96,12 +96,18 @@ class MonaiTrainer:
         # 7. Wandb
         if self.local_rank == 0:
             wandb_cfg = self.config.get("wandb", {})
-            wandb.init(
-                project=wandb_cfg.get("project", "hiri-segmentation"),
-                entity=wandb_cfg.get("entity", None),
-                config=self.config,
-                name=f"fold_{self.args.fold}_{self.args.model}"
-            )
+            wandb_mode = os.environ.get("WANDB_MODE", "online" if os.environ.get("WANDB_API_KEY") else "offline")
+            try:
+                wandb.init(
+                    project=wandb_cfg.get("project", "hiri-segmentation"),
+                    entity=wandb_cfg.get("entity", None),
+                    config=self.config,
+                    name=f"fold_{self.args.fold}_{self.args.model}",
+                    mode=wandb_mode
+                )
+            except Exception as e:
+                logger.warning(f"Wandb initialization failed ({e}), continuing in disabled mode.")
+                wandb.init(mode="disabled")
 
     def _save_checkpoint(self, filename: str, metric: float = -1.0):
         if self.local_rank != 0:
