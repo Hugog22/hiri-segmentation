@@ -7,6 +7,7 @@ import json
 import logging
 from pathlib import Path
 import numpy as np
+import nibabel as nib
 import SimpleITK as sitk
 import pandas as pd
 
@@ -26,16 +27,19 @@ def compute_volume_ml(mask_path: Path, label: int, spacing: tuple[float, float, 
     Compute volume for a given label in mL.
     If spacing is None, read from NIfTI header.
     """
-    img = sitk.ReadImage(str(mask_path))
-    mask_array = sitk.GetArrayFromImage(img)
-    
-    if spacing is None:
-        spacing = img.GetSpacing()
-    else:
-        logger.warning("Using provided original spacing instead of image header spacing.")
-        
-    voxel_volume_mm3 = spacing[0] * spacing[1] * spacing[2]
-    voxel_count = np.sum(mask_array == label)
+    try:
+        nii = nib.load(str(mask_path))
+        mask_array = np.asarray(nii.dataobj)
+        if spacing is None:
+            spacing = tuple(float(s) for s in nii.header.get_zooms()[:3])
+    except Exception:
+        img = sitk.ReadImage(str(mask_path))
+        mask_array = sitk.GetArrayFromImage(img)
+        if spacing is None:
+            spacing = img.GetSpacing()
+            
+    voxel_volume_mm3 = float(spacing[0] * spacing[1] * spacing[2])
+    voxel_count = int(np.sum(mask_array == label))
     
     volume_ml = (voxel_count * voxel_volume_mm3) / 1000.0
     return float(volume_ml)

@@ -10,6 +10,8 @@ from pathlib import Path
 from typing import Dict, Any
 
 import SimpleITK as sitk
+import nibabel as nib
+import numpy as np
 import yaml
 
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
@@ -71,22 +73,18 @@ def process_dataset(dataset_name: str, raw_dir: Path, output_dir: Path) -> list:
             # Combine per-structure binary masks into a single multi-label mask
             seg_dir = case_dir / 'segmentations'
             if seg_dir.exists():
-                ref_img = sitk.ReadImage(str(img_src))
-                combined = sitk.Image(ref_img.GetSize(), sitk.sitkUInt8)
-                combined.CopyInformation(ref_img)
-                combined_arr = sitk.GetArrayFromImage(combined)
+                ref_nii = nib.load(str(img_src))
+                combined_arr = np.zeros(ref_nii.shape, dtype=np.uint8)
                 for organ_file, ts_label in TOTALSEG_ORGAN_FILES.items():
                     organ_path = seg_dir / f'{organ_file}.nii.gz'
                     if organ_path.exists():
-                        organ_img = sitk.ReadImage(str(organ_path))
-                        organ_arr = sitk.GetArrayFromImage(organ_img)
-                        # Binary mask: set voxels to TotalSeg label ID
+                        organ_nii = nib.load(str(organ_path))
+                        organ_arr = np.asarray(organ_nii.dataobj)
                         combined_arr[organ_arr > 0] = ts_label
                     else:
                         logging.warning(f"Missing {organ_file}.nii.gz for {case_id}")
-                result = sitk.GetImageFromArray(combined_arr)
-                result.CopyInformation(ref_img)
-                sitk.WriteImage(result, str(case_out / 'label.nii.gz'))
+                result_nii = nib.Nifti1Image(combined_arr, ref_nii.affine, ref_nii.header)
+                nib.save(result_nii, str(case_out / 'label.nii.gz'))
             else:
                 logging.warning(f"No segmentations/ directory for {case_id}")
             manifest.append({
