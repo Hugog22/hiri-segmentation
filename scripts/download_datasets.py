@@ -11,6 +11,7 @@ Handles:
 import argparse
 import logging
 import os
+import shutil
 import subprocess
 import sys
 from pathlib import Path
@@ -51,17 +52,27 @@ def download_totalsegmentator(dest_dir: Path) -> None:
         return
 
     # Check zip file status
-    if zip_path.exists() and zip_path.stat().st_size > 10 * 1024 * 1024:  # > 10 MB
+    min_valid_size = 100 * 1024 * 1024  # 100 MB
+    if zip_path.exists() and zip_path.stat().st_size > min_valid_size:
         size_gb = zip_path.stat().st_size / (1024 ** 3)
         logger.info(f"TotalSegmentator zip archive exists ({size_gb:.2f} GB). Extracting...")
     else:
         if zip_path.exists():
-            logger.warning(f"Existing zip is incomplete or corrupt ({zip_path.stat().st_size} bytes). Resuming/redownloading...")
-        zenodo_url = "https://zenodo.org/records/6802614/files/Totalsegmentator_dataset_v201.zip"
-        logger.info("Downloading TotalSegmentator v2 from Zenodo (resumable curl)...")
-        # -L follows redirects, -C - resumes partial downloads
-        cmd = ["curl", "-L", "-C", "-", "-o", str(zip_path), zenodo_url]
+            logger.warning(f"Removing corrupt/incomplete zip ({zip_path.stat().st_size} bytes)...")
+            zip_path.unlink(missing_ok=True)
+            
+        zenodo_url = "https://zenodo.org/records/10047292/files/Totalsegmentator_dataset_v201.zip?download=1"
+        logger.info(f"Downloading TotalSegmentator v2 from Zenodo ({zenodo_url})...")
+        
+        # Check if wget is available on Linux
+        has_wget = shutil.which("wget") is not None
+        if has_wget:
+            cmd = ["wget", "--continue", "-O", str(zip_path), zenodo_url]
+        else:
+            cmd = ["curl", "-L", "-o", str(zip_path), zenodo_url]
+            
         try:
+            logger.info(f"Executing: {' '.join(cmd)}")
             subprocess.run(cmd, check=True)
             logger.info(f"Downloaded TotalSegmentator archive to {zip_path}")
         except Exception as e:
