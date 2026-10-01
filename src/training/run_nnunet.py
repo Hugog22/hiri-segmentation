@@ -76,16 +76,34 @@ def run_planning(dataset_id: int, planner: str = "nnUNetPlannerResEncL", verify_
         else:
             raise
 
+def resolve_plans_name(dataset_id: int, planner_or_plans: str) -> str:
+    """Resolves planner class name to the actual plans identifier in nnUNet_preprocessed."""
+    mapping = {
+        "nnUNetPlannerResEncL": "nnUNetResEncUNetLPlans",
+        "nnUNetPlannerResEncXL": "nnUNetResEncUNetXLPlans",
+        "nnUNetPlanner": "nnUNetPlans",
+    }
+    candidate = mapping.get(planner_or_plans, planner_or_plans)
+    prep_dir = Path(os.environ.get("nnUNet_preprocessed", Path.cwd() / "nnUNet_preprocessed")) / f"Dataset{dataset_id:03d}_HIRI"
+    if (prep_dir / f"{candidate}.json").exists():
+        return candidate
+    found_plans = list(prep_dir.glob("*Plans.json"))
+    if found_plans:
+        return found_plans[0].stem
+    return candidate
+
+
 def run_training(dataset_id: int, config: str, fold: int, trainer: str = "nnUNetTrainer", 
                  planner: str = "nnUNetPlannerResEncL", resume: bool = False) -> None:
     """Run nnUNetv2_train."""
+    plans_name = resolve_plans_name(dataset_id, planner)
     cmd = [
         "nnUNetv2_train",
         str(dataset_id),
         config,
         str(fold),
         "-tr", trainer,
-        "-p", planner
+        "-p", plans_name
     ]
     if resume:
         cmd.append("--c")
@@ -95,6 +113,7 @@ def run_prediction(dataset_id: int, config: str, fold: Union[int, str], input_di
                    output_dir: Path, planner: str = "nnUNetPlannerResEncL") -> None:
     """Run nnUNetv2_predict."""
     output_dir.mkdir(parents=True, exist_ok=True)
+    plans_name = resolve_plans_name(dataset_id, planner)
     cmd = [
         "nnUNetv2_predict",
         "-i", str(input_dir),
@@ -102,7 +121,7 @@ def run_prediction(dataset_id: int, config: str, fold: Union[int, str], input_di
         "-d", str(dataset_id),
         "-c", config,
         "-f", str(fold),
-        "-p", planner
+        "-p", plans_name
     ]
     _run_cmd(cmd)
 

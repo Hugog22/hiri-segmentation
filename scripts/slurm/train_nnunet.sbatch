@@ -44,7 +44,27 @@ while [[ "$#" -gt 0 ]]; do
     shift
 done
 
-echo "Starting nnU-Net v2 training for dataset $DATASET_ID, config $CONFIG, fold $FOLD, planner $PLANNER"
+# Normalize planner class name to plans identifier
+if [ "$PLANNER" == "nnUNetPlannerResEncL" ] || [ "$PLANNER" == "nnUNetResEncUNetLPlans" ]; then
+    PLANS="nnUNetResEncUNetLPlans"
+elif [ "$PLANNER" == "nnUNetPlannerResEncXL" ] || [ "$PLANNER" == "nnUNetResEncUNetXLPlans" ]; then
+    PLANS="nnUNetResEncUNetXLPlans"
+elif [ "$PLANNER" == "nnUNetPlanner" ] || [ "$PLANNER" == "nnUNetPlans" ]; then
+    PLANS="nnUNetPlans"
+else
+    PLANS="$PLANNER"
+fi
+
+PREP_DIR="${nnUNet_preprocessed}/Dataset${DATASET_ID}_HIRI"
+if [ ! -f "${PREP_DIR}/${PLANS}.json" ]; then
+    DETECTED_PLANS=$(find "$PREP_DIR" -maxdepth 1 -name "*Plans.json" 2>/dev/null | head -n 1 | xargs -r basename -s .json)
+    if [ -n "$DETECTED_PLANS" ]; then
+        echo "Auto-detected plans identifier: $DETECTED_PLANS"
+        PLANS="$DETECTED_PLANS"
+    fi
+fi
+
+echo "Starting nnU-Net v2 training for dataset $DATASET_ID, config $CONFIG, fold $FOLD, plans $PLANS"
 
 # Run nnUNetv2_train for the specified fold
-nnUNetv2_train $DATASET_ID $CONFIG $FOLD -p $PLANNER $RESUME
+nnUNetv2_train $DATASET_ID $CONFIG $FOLD -p $PLANS $RESUME
