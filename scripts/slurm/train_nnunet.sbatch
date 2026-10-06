@@ -8,7 +8,7 @@
 #SBATCH --cpus-per-task=8
 #SBATCH --mem=128G
 #SBATCH --gres=gpu:4
-# #SBATCH --partition=gpu  # Ajustar con -p <particion> segun salida de sinfo
+#SBATCH --partition=long
 
 mkdir -p logs
 
