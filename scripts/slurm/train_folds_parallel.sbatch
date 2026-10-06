@@ -9,7 +9,7 @@
 #SBATCH --cpus-per-task=8
 #SBATCH --mem=32G
 #SBATCH --gres=gpu:1
-#SBATCH --partition=gpu
+# #SBATCH --partition=gpu  # Ajustar con -p <particion> segun salida de sinfo
 
 MODEL_TYPE="monai"
 MODEL_NAME="swin_unetr_base"
