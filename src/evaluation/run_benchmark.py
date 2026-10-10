@@ -93,8 +93,8 @@ def evaluate_case(
             "asd": asd,
             "vol_pred_ml": v_pred_ml,
             "vol_gt_ml": v_gt_ml,
-            "vol_error_abs_ml": vol_err["abs_error_ml"],
-            "vol_error_rel_pct": vol_err["rel_error_pct"],
+            "vol_error_abs_ml": vol_err.get("abs_error_ml", vol_err.get("absolute_error_ml", abs(v_pred_ml - v_gt_ml))),
+            "vol_error_rel_pct": vol_err.get("rel_error_pct", vol_err.get("relative_error_percent", (abs(v_pred_ml - v_gt_ml) / v_gt_ml * 100.0) if v_gt_ml > 0 else 0.0)),
         })
         
     return records

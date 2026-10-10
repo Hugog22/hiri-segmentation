@@ -73,7 +73,9 @@ def compute_volume_error(pred_volumes: dict[str, float], gt_volumes: dict[str, f
             
             errors[organ] = {
                 "absolute_error_ml": abs_err,
-                "relative_error_percent": rel_err
+                "relative_error_percent": rel_err,
+                "abs_error_ml": abs_err,
+                "rel_error_pct": rel_err,
             }
     return errors
 
