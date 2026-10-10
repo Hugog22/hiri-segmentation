@@ -1,0 +1,3 @@
+{
+  "nnUNet_ResEncL_Ensemble": "results/predictions/nnunet_ensemble"
+}
