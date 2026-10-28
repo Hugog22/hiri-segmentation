@@ -53,7 +53,14 @@ def run_single_experiment(exp_name: str, exp_config: Dict[str, Any], folds: List
     elif framework == "monai":
         model = exp_config.get("model")
         for fold in folds:
-            cmd = ["python", "-m", "src.training.monai_trainer", "--model", model, "--fold", str(fold), "--config", config_path]
+            checkpoint_dir = output_dir / exp_name / f"fold_{fold}"
+            cmd = [
+                "python", "-m", "src.training.monai_trainer",
+                "--model", model,
+                "--fold", str(fold),
+                "--config", config_path,
+                "--output-dir", str(checkpoint_dir),
+            ]
             subprocess.run(cmd, check=True)
     else:
         logger.error(f"Unknown framework: {framework}")

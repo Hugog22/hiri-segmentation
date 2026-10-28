@@ -53,7 +53,7 @@ def main():
     parser = argparse.ArgumentParser(description="Master preprocessing script.")
     parser.add_argument('--config', type=Path, default=Path('configs/base.yaml'), help="Path to config yaml")
     parser.add_argument('--steps', nargs='+', default=['convert', 'unify', 'verify', 'laterality', 'corrupt', 'resample'], help="Steps to run")
-    parser.add_argument('--datasets', nargs='+', default=['TotalSegmentator', 'LiTS', 'KiTS23', 'AMOS', 'BTCV'], help="Datasets to process")
+    parser.add_argument('--datasets', nargs='+', default=['TotalSegmentator', 'LiTS', 'KiTS23', 'AMOS22', 'BTCV'], help="Datasets to process")
     
     args = parser.parse_args()
     

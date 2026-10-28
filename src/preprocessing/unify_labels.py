@@ -45,7 +45,7 @@ def unify_labels_for_dataset(dataset_name: str, input_dir: Path, output_dir: Pat
             unified_data[data == 1] = 1 
             unified_data[data == 2] = 5
             unified_data[data == 3] = 6
-        elif dataset_name.lower() in ['amos', 'btcv']:
+        elif dataset_name.lower() in ['amos', 'amos22', 'btcv']:
             unified_data[data == 6] = 1
             unified_data[data == 2] = 2
             unified_data[data == 3] = 3

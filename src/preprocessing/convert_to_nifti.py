@@ -134,7 +134,7 @@ def process_dataset(dataset_name: str, raw_dir: Path, output_dir: Path) -> list:
                 if label_src.exists():
                     shutil.copy2(label_src, label_dst)
                 manifest.append({'case_id': case_id, 'dataset': dataset_name, 'original_path': str(img_src), 'processed_path': str(img_dst), 'contrast_phase': 'unknown'})
-    elif dataset_name.lower() == 'amos':
+    elif dataset_name.lower() in ['amos', 'amos22']:
         img_dir = raw_dir / 'imagesTr'
         label_dir = raw_dir / 'labelsTr'
         if img_dir.exists():
@@ -176,7 +176,7 @@ def process_dataset(dataset_name: str, raw_dir: Path, output_dir: Path) -> list:
 
 def main():
     parser = argparse.ArgumentParser(description="Convert datasets to a unified NIfTI format.")
-    parser.add_argument('--dataset', required=True, help="Dataset name (e.g., TotalSegmentator, LiTS, KiTS23, AMOS, BTCV, CHAOS)")
+    parser.add_argument('--dataset', required=True, help="Dataset name (e.g., TotalSegmentator, LiTS, KiTS23, AMOS22, BTCV, CHAOS)")
     parser.add_argument('--raw-dir', type=Path, required=True, help="Directory containing raw dataset")
     parser.add_argument('--output-dir', type=Path, required=True, help="Output directory for processed NIfTIs")
     parser.add_argument('--config', type=Path, required=True, help="Path to base.yaml config")
